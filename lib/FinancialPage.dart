@@ -8,37 +8,53 @@ class FinancialPage extends StatefulWidget{
 
 class _FinancialPageState extends State<FinancialPage>{
   // Initial dates for statistics
-  DateTime fromDate = DateTime.now().subtract(Duration(days: 1));
+  DateTime fromDate = DateTime.now().subtract(Duration(seconds: 1));
   DateTime toDate = DateTime.now();
+  bool calculated = false;
   double revenue = 0.0;
   double profit = 0.0;
-
+  
   @override
   Widget build(BuildContext context) {
-    _calculateStatistics();
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Financieel'),
+    List<Widget> elements = [
+      ListTile(
+        leading: Text("Van:"),
+        title: Text(fromDate.toString()),
+        onTap: () {_selectFromDate(context);},
       ),
-      body: Column(children: <Widget>[
-        ListTile(
-          leading: Text("Van:"),
-          title: Text(fromDate.toString()),
-          onTap: () {_selectFromDate(context);},
-        ),
-        ListTile(
-          leading: Text("Tot:"),
-          title: Text(toDate.toString()),
-          onTap: () {_selectToDate(context);},
-        ),
-        Divider(),
+      ListTile(
+        leading: Text("Tot:"),
+        title: Text(toDate.toString()),
+        onTap: () {_selectToDate(context);},
+      ),
+      Divider(),
+    ];
+    List<Widget> statistics;
+    if(calculated){
+      statistics = [
         ListTile(
           title: Text("Omzet: € " + revenue.toString()),
         ),
         ListTile(
           title: Text("Winst: € " + profit.toString()),
         ),
-      ],)
+      ];
+    } else {
+      statistics = [
+        RaisedButton(
+          child: Text("Bereken"),
+          onPressed: () {
+            _calculateStatistics();
+          },
+        ),
+      ];
+    }
+    elements.addAll(statistics);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Financieel'),
+      ),
+      body: Column(children: elements,)
     );
   }
 
@@ -55,8 +71,10 @@ class _FinancialPageState extends State<FinancialPage>{
     );
     DateTime picked = DateTime(date.year, date.month, date.day, time.hour, time.minute);
     if(picked != null && picked != fromDate && picked.isBefore(toDate)){
+      fromDate = picked;
       setState(() {
         fromDate = picked;
+        calculated = false;
       });
     } else {
       _showDialog(context);
@@ -76,19 +94,35 @@ class _FinancialPageState extends State<FinancialPage>{
     );
     DateTime picked = DateTime(date.year, date.month, date.day, time.hour, time.minute);
     if(picked != null && picked != toDate && picked.isAfter(fromDate)){
+      toDate = picked;
       setState(() {
-       toDate = picked; 
+        toDate = picked;
+        calculated = false;
       });
     } else {
       _showDialog(context);
     }
   }
 
-  _calculateStatistics(){
-    // Get all transactions between the picked dates
-    // Calculate the statistics on these transactions
-    revenue = 0.0;
+  Future<void> _calculateStatistics() async {
     profit = 0.0;
+    revenue = 0.0;
+    // Get all transactions between the picked dates
+    Future<QuerySnapshot> stock = Firestore.instance.collection('transactions').where("timestamp", isGreaterThan: fromDate).where("timestamp", isLessThan:toDate).getDocuments();
+    stock.then((QuerySnapshot snapshot){
+      snapshot.documents.forEach((DocumentSnapshot document){
+        // Calculate in eurocents to avoid floating point errors
+        revenue += document['price'];
+        profit += document['profit'];
+      });
+      // convert to euros and update state
+     revenue = revenue/100;
+     profit = profit/100;
+     setState(() {
+       calculated = true;
+     });
+    });
+    
   }
 
   _showDialog(context){

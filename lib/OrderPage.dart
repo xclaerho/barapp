@@ -27,7 +27,7 @@ class _OrderPageState extends State<OrderPage> {
           children: <Widget>[
             ListTile(
               leading: Icon(Icons.euro_symbol),
-              title: Text(_calculatePrice().toString()),
+              title: Text((_calculatePrice()/100).toString()),
             ),
             Expanded(
               child: ListView.builder(
@@ -75,13 +75,13 @@ class _OrderPageState extends State<OrderPage> {
   /// to no longer loading when done.
   void _initMap() async {
     _order = List();
-    Future<QuerySnapshot> stock = Firestore.instance.collection('stock').getDocuments();
+    Future<QuerySnapshot> stock = Firestore.instance.collection('stock').orderBy('type').getDocuments();
     stock.then((QuerySnapshot snapshot){
       snapshot.documents.forEach((DocumentSnapshot document){
         Map item = Map();
         item['name'] = document['item'];
-        // Store in eurocents to avoid floating point errors
-        item['price'] = document['price']*100;
+        item['price'] = document['price'];
+        item['purchaseprice'] = document['purchaseprice'];
         item['amount'] = 0;
         item['documentID'] = document.documentID;
         _order.add(item);
@@ -98,8 +98,16 @@ class _OrderPageState extends State<OrderPage> {
     _order.forEach((element) {
       price += element['amount']*element['price']; 
     });
-    // Convert price from eurocents to euros
-    return price/100;
+    return price;
+  }
+
+  /// Calculate the profit of all items in the current order in eurocents.
+  double _calculateProfit(){
+    double profit = 0;
+    _order.forEach((element) {
+      profit += element['amount']*(element['price'] - element['purchaseprice']); 
+    });
+    return profit;
   }
 
   /// Send order to be stored in the database.
@@ -115,8 +123,9 @@ class _OrderPageState extends State<OrderPage> {
       // create transaction
       Map<String, dynamic> transaction = Map();
       transaction['timestamp'] = Timestamp.now();
-      transaction['price'] =_calculatePrice();
+      transaction['price'] = _calculatePrice();
       transaction['order'] = List();
+      transaction['profit'] =_calculateProfit();
       // update stock if needed and add to transaction
       _order.forEach((element){
         if(element['amount']>0){

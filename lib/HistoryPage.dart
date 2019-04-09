@@ -23,7 +23,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 String hour = (document['timestamp'].hour < 10)? "0"+document["timestamp"].hour.toString() : document['timestamp'].hour.toString();
                 String minute = (document['timestamp'].minute < 10)? "0"+document["timestamp"].minute.toString() : document['timestamp'].minute.toString();
                 return ExpansionTile(
-                    leading: Text("€ " + document['price'].toString()),
+                    leading: Text("€ " + (document['price']/100).toString()),
                     title: Text(hour + ":" + minute),
                     children: _orderDetails(document["order"], document.documentID),
                 );
