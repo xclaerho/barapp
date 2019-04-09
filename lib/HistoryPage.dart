@@ -81,6 +81,8 @@ class _HistoryPageState extends State<HistoryPage> {
     Firestore.instance.runTransaction((Transaction tx) async {
       await tx.delete(ref);
     });
+    // give feedback about undoing
+    Scaffold.of(context).showSnackBar(SnackBar(content: Text("Verwijderd!"),duration: Duration(seconds: 1),));
   }
   
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:barapp/StockPage.dart';
 import 'package:barapp/HistoryPage.dart';
 import 'package:barapp/OrderPage.dart';
+import 'package:barapp/FinancialPage.dart';
+import 'package:barapp/StockSettings.dart';
 
 void main() => runApp(MyApp());
 
@@ -53,18 +55,24 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
     print(_controller.toString());
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: <Widget>[
-            Text("Vermeylen bar"),
-            IconButton(
-              icon: Icon(Icons.more_vert),
-              onPressed: () {
-                
-              },
-            ),
-          ],
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        ),
+        title: Text("Vermeylen bar"),
+        actions: <Widget>[
+          PopupMenuButton(
+            onSelected: navigate,
+            itemBuilder: (BuildContext context) {
+              return [
+                PopupMenuItem(
+                  child: Text("Financieel"),
+                  value: "financial",
+                ),
+                PopupMenuItem(
+                  child: Text("Bewerk stock"),
+                  value: "stock",
+                ),
+              ];
+            },
+          ),
+        ],
         backgroundColor: Theme.of(context).primaryColor,
         bottom: TabBar(
           controller: _controller,
@@ -74,6 +82,7 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
             Tab(icon: Icon(Icons.history)),
           ],
         ),
+        
       ),
       body: TabBarView(
         controller: _controller,
@@ -83,6 +92,19 @@ class _TabsState extends State<Tabs> with SingleTickerProviderStateMixin {
           HistoryPage(),
         ],
       )
+    );
+  }
+
+  navigate(String page){
+    Widget route;
+    if(page == "financial"){
+      route = FinancialPage();
+    } else if(page == "stock"){
+      route = StockSettings();
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => route),
     );
   }
 }

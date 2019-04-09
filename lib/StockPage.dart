@@ -21,12 +21,6 @@ class StockPage extends StatelessWidget {
                   );
                 }).toList(),
               ),
-              floatingActionButton: FloatingActionButton(
-                child: Icon(Icons.local_shipping),
-                onPressed: (){
-                  //TODO: delivery modal
-                },
-              ),
             );
         }
       },

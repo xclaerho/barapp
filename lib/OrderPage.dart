@@ -37,14 +37,6 @@ class _OrderPageState extends State<OrderPage> {
                     title: Text(_order.elementAt(index)['name']),
                     trailing: Row(
                       children: <Widget>[
-                        IconButton(
-                          icon: Icon(Icons.add),
-                          onPressed: () {
-                            setState(() {
-                                _order.elementAt(index)['amount']++; 
-                            });
-                          },
-                        ),
                         Text(_order.elementAt(index)['amount'].toString()),
                         IconButton(
                           icon: Icon(Icons.remove),
@@ -58,6 +50,11 @@ class _OrderPageState extends State<OrderPage> {
                       ],
                       mainAxisSize: MainAxisSize.min,
                     ),
+                    onTap: (){
+                      setState(() {
+                        _order.elementAt(index)['amount']++; 
+                      });
+                    },
                   );
                 },
               ),
@@ -83,7 +80,8 @@ class _OrderPageState extends State<OrderPage> {
       snapshot.documents.forEach((DocumentSnapshot document){
         Map item = Map();
         item['name'] = document['item'];
-        item['price'] = document['price'];
+        // Store in eurocents to avoid floating point errors
+        item['price'] = document['price']*100;
         item['amount'] = 0;
         item['documentID'] = document.documentID;
         _order.add(item);
@@ -94,13 +92,14 @@ class _OrderPageState extends State<OrderPage> {
     });
   }
 
-  /// Calculate the price of all items in the current order.
+  /// Calculate the price of all items in the current order in eurocents.
   double _calculatePrice(){
     double price = 0;
     _order.forEach((element) {
-      price += element['amount']*element['price'];  
+      price += element['amount']*element['price']; 
     });
-    return price;
+    // Convert price from eurocents to euros
+    return price/100;
   }
 
   /// Send order to be stored in the database.
@@ -140,6 +139,7 @@ class _OrderPageState extends State<OrderPage> {
       });
       // New order (sets loaded to true as well)
       _initMap();
+      Scaffold.of(context).showSnackBar(SnackBar(content: Text("Verstuurd!"),duration: Duration(seconds: 1),));
     }
   }
   
